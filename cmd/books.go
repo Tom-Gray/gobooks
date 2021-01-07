@@ -1,6 +1,7 @@
-package main
+package main //I have to move all this stuff out of main if I wnant to share it with another frontend (like a rest api )
 
 import (
+	"bookstore/pkg/util"
 	"database/sql"
 	"fmt"
 
@@ -28,10 +29,13 @@ func addBook() error {
 		CLI.Add.Author,
 		CLI.Add.Rating,
 	)
-
+	f := "I am a string"
+	g := util.AppendButt(f)
+	fmt.Println(g)
+	dbConfig := createDbSettings(driver, fileLocation)
 	//do something with the book object (print, add to database etc)
 	fmt.Println("Adding book entry: ", bookEntry)
-	err := writeEntry(bookEntry)
+	err := writeEntry(*dbConfig, bookEntry)
 	if err != nil {
 		return err
 	}
@@ -40,9 +44,15 @@ func addBook() error {
 }
 
 //interact with database
-func writeEntry(book *book) error {
-	database, _ := sql.Open("sqlite3", "./book.db")
-	createDbStatement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS books (id INTEGER PRIMARY KEY, title TEXT, author TEXT, rating INTEGER)")
+func writeEntry(db dbSettings, book *book) error {
+	database, err := sql.Open(db.driver, db.fileLocation)
+	if err != nil {
+		return err
+	}
+	createDbStatement, err := database.Prepare("CREATE TABLE IF NOT EXISTS books (id INTEGER PRIMARY KEY, title TEXT, author TEXT, rating INTEGER)")
+	if err != nil {
+		return err
+	}
 	createDbStatement.Exec()
 	fmt.Println("Writing this book:", book)
 	statement, _ := database.Prepare("INSERT INTO books (title, author, rating) VALUES (?, ?, ?)")
@@ -51,8 +61,8 @@ func writeEntry(book *book) error {
 	return nil
 }
 
-func listAllEntries() error {
-	database, _ := sql.Open("sqlite3", "./book.db")
+func listAllEntries(db *dbSettings) error {
+	database, _ := sql.Open(db.driver, db.fileLocation)
 	rows, _ := database.Query("SELECT id, title, author, rating FROM books")
 	var id int
 	var title string
@@ -61,7 +71,7 @@ func listAllEntries() error {
 
 	for rows.Next() {
 		rows.Scan(&id, &title, &author, &rating)
-		fmt.Printf("Book No. %v: Title: %v \n Author: %v \n Rating: %v", id, title, author, rating)
+		fmt.Printf("Book No. %v: Title: %v \n Author: %v \n Rating: %v \n", id, title, author, rating)
 	}
 	return nil
 }

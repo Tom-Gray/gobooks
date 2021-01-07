@@ -27,7 +27,7 @@ func mainCore() error {
 	case "add":
 		return addBook()
 	case "list":
-		return listAllEntries()
+		return listAllEntries(createDbSettings(driver, fileLocation))
 
 	default:
 		panic(ctx.Command())
